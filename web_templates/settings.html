@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head><meta charset="utf-8"><title>Settings</title></head>
+  <body>
+    <h1>Guild Settings</h1>
+    <p>Logged in as {{ user.username }}</p>
+    {% for g in guilds %}
+      <div style="border:1px solid #ddd;padding:8px;margin:8px;">
+        <strong>{{ g.name }}</strong><br>
+        Troll enabled: {{ g.troll_enabled }}<br>
+        <form method="post" action="/settings/toggle_troll">
+          <input type="hidden" name="secret" value="{{ request.app['secret'] if request.app.get('secret') else '' }}">
+          <input type="hidden" name="guild_id" value="{{ g.id }}">
+          <label><input type="checkbox" name="enabled" value="true" {% if g.troll_enabled %}checked{% endif %}> Enable troll</label>
+          <button type="submit">Save</button>
+        </form>
+      </div>
+    {% endfor %}
+  </body>
+</html>
