@@ -2,3 +2,9 @@ discord.py>=2.3.2
 python-dotenv>=1.0.1
 aiohttp>=3.8.4
 aiohttp-jinja2>=1.6
+aiosqlite>=0.18.0
+async-timeout>=4.0.2
+pyyaml>=6.0
+# Optional for music:
+PyNaCl>=1.5.0   # required for voice if you plan to enable voice
+yt-dlp>=2025.10.01  # optional for youtube downloads/streams (install only if using music)
