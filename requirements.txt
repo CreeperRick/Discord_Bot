@@ -5,6 +5,11 @@ aiohttp-jinja2>=1.6
 aiosqlite>=0.18.0
 async-timeout>=4.0.2
 pyyaml>=6.0
-# Optional for music:
-PyNaCl>=1.5.0   # required for voice if you plan to enable voice
-yt-dlp>=2025.10.01  # optional for youtube downloads/streams (install only if using music)
+
+# Optional / only if you enable music playback:
+PyNaCl>=1.5.0
+yt-dlp>=2025.10.01
+
+# Optional image / meme generation (if you plug in an API)
+Pillow>=10.0.0
+requests>=2.31.0
