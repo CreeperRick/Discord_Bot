@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Discord Bot{% endblock %}
+{% block page_title %}⚙️ Bot Settings{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- General Settings -->
+    <div class="card p-6 rounded-xl lg:col-span-2">
+        <h3 class="text-lg font-bold mb-6">General Settings</h3>
+        
+        <div class="space-y-6">
+            <!-- Bot Status -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Bot Status</label>
+                <select class="w-full p-3 rounded-lg bg-white/10 border border-white/20">
+                    <option>Online</option>
+                    <option>Idle</option>
+                    <option>Do Not Disturb</option>
+                    <option>Invisible</option>
+                </select>
+            </div>
+            
+            <!-- Activity Type -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Activity Type</label>
+                <select class="w-full p-3 rounded-lg bg-white/10 border border-white/20">
+                    <option>Playing</option>
+                    <option>Listening</option>
+                    <option>Watching</option>
+                    <option>Competing</option>
+                </select>
+            </div>
+            
+            <!-- Status Message -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Status Message</label>
+                <input type="text" placeholder="Type /help" class="w-full p-3 rounded-lg bg-white/10 border border-white/20">
+            </div>
+            
+            <!-- Prefix -->
+            <div>
+                <label class="block text-sm font-medium mb-2">Command Prefix</label>
+                <input type="text" placeholder="!" class="w-full p-3 rounded-lg bg-white/10 border border-white/20" value="!">
+            </div>
+            
+            <!-- Save Button -->
+            <button onclick="saveSettings()" class="w-full btn-primary text-white py-3 rounded-lg font-medium">
+                Save Settings
+            </button>
+        </div>
+    </div>
+    
+    <!-- Feature Toggles -->
+    <div class="card p-6 rounded-xl">
+        <h3 class="text-lg font-bold mb-6">Feature Toggles</h3>
+        
+        <div class="space-y-4">
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div>
+                    <p class="font-medium">Music System</p>
+                    <p class="text-sm text-gray-400">Enable music commands</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div>
+                    <p class="font-medium">Ticket System</p>
+                    <p class="text-sm text-gray-400">Enable support tickets</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div>
+                    <p class="font-medium">Moderation</p>
+                    <p class="text-sm text-gray-400">Enable moderation tools</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div>
+                    <p class="font-medium">Community Features</p>
+                    <p class="text-sm text-gray-400">Polls, giveaways, etc.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div>
+                    <p class="font-medium">Troll Commands</p>
+                    <p class="text-sm text-gray-400">Fun/safe troll commands</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+            
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                <div>
+                    <p class="font-medium">Logging</p>
+                    <p class="text-sm text-gray-400">Enable activity logging</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Danger Zone -->
+    <div class="card p-6 rounded-xl lg:col-span-3">
+        <h3 class="text-lg font-bold mb-4 text-red-400">⚠️ Danger Zone</h3>
+        <div class="space-y-4">
+            <button onclick="restartBot()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-3 rounded-lg">
+                <i class="fas fa-redo-alt mr-2"></i> Restart Bot
+            </button>
+            <button onclick="showResetModal()" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg">
+                <i class="fas fa-trash-alt mr-2"></i> Reset All Settings
+            </button>
+            <button onclick="showShutdownModal()" class="w-full bg-red-800 hover:bg-red-900 text-white py-3 rounded-lg">
+                <i class="fas fa-power-off mr-2"></i> Shutdown Bot
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-gray-900 p-6 rounded-xl w-96">
+        <h3 class="text-xl font-bold mb-2" id="modalTitle">Confirm Action</h3>
+        <p class="text-gray-400 mb-6" id="modalMessage">Are you sure you want to proceed?</p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="hideModal('confirmModal')" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600">Cancel</button>
+            <button onclick="confirmAction()" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700" id="confirmButton">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentAction = '';
+
+function saveSettings() {
+    showNotification('Settings saved successfully!', 'success');
+}
+
+function restartBot() {
+    showConfirmModal('Restart Bot', 'This will restart the bot. Continue?', 'restart');
+}
+
+function showResetModal() {
+    showConfirmModal('Reset Settings', 'This will reset all settings to default. Continue?', 'reset');
+}
+
+function showShutdownModal() {
+    showConfirmModal('Shutdown Bot', 'This will shut down the bot completely. Continue?', 'shutdown');
+}
+
+function showConfirmModal(title, message, action) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    currentAction = action;
+    
+    let buttonText = 'Confirm';
+    if (action === 'shutdown') buttonText = 'Shutdown';
+    if (action === 'restart') buttonText = 'Restart';
+    if (action === 'reset') buttonText = 'Reset';
+    
+    document.getElementById('confirmButton').textContent = buttonText;
+    document.getElementById('confirmModal').classList.remove('hidden');
+    document.getElementById('confirmModal').classList.add('flex');
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+    document.getElementById(modalId).classList.remove('flex');
+    currentAction = '';
+}
+
+function confirmAction() {
+    hideModal('confirmModal');
+    
+    switch (currentAction) {
+        case 'restart':
+            showNotification('Restarting bot...', 'info');
+            setTimeout(() => location.reload(), 2000);
+            break;
+        case 'reset':
+            showNotification('Settings reset to default', 'success');
+            break;
+        case 'shutdown':
+            showNotification('Shutting down bot...', 'info');
+            break;
+    }
+    
+    currentAction = '';
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}
