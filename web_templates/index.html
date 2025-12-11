@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Discord Bot{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="card stat-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Servers</p>
+                    <p class="text-3xl font-bold" data-stat="guilds">{{ guilds if guilds else 0 }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-server text-blue-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card stat-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Total Users</p>
+                    <p class="text-3xl font-bold" data-stat="users">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <i class="fas fa-users text-green-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card stat-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Open Tickets</p>
+                    <p class="text-3xl font-bold" data-stat="open_tickets">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                    <i class="fas fa-ticket-alt text-yellow-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card stat-card p-6 rounded-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-sm">Active Warnings</p>
+                    <p class="text-3xl font-bold" data-stat="active_warnings">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card p-6 rounded-xl">
+            <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+            <div class="space-y-3">
+                <button onclick="controlMusic('pause')" class="w-full btn-primary text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2">
+                    <i class="fas fa-pause"></i>
+                    <span>Pause Music</span>
+                </button>
+                <button onclick="controlMusic('skip')" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2">
+                    <i class="fas fa-forward"></i>
+                    <span>Skip Song</span>
+                </button>
+                <button onclick="window.location.href='/tickets'" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>View Tickets</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card p-6 rounded-xl md:col-span-2">
+            <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <i class="fas fa-check text-green-500"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Bot Started</p>
+                            <p class="text-sm text-gray-400">Just now</p>
+                        </div>
+                    </div>
+                    <span class="text-sm text-gray-400">System</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <i class="fas fa-music text-blue-500"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Music System Ready</p>
+                            <p class="text-sm text-gray-400">Ready to play</p>
+                        </div>
+                    </div>
+                    <span class="text-sm text-gray-400">Music</span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-purple-500"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Moderation Active</p>
+                            <p class="text-sm text-gray-400">All systems go</p>
+                        </div>
+                    </div>
+                    <span class="text-sm text-gray-400">Moderation</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Server List -->
+    <div class="card p-6 rounded-xl">
+        <h3 class="text-lg font-bold mb-4">Connected Servers</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="text-left py-3 px-4">Server</th>
+                        <th class="text-left py-3 px-4">Members</th>
+                        <th class="text-left py-3 px-4">Owner</th>
+                        <th class="text-left py-3 px-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for guild in bot.guilds[:5] %}
+                    <tr class="border-b border-white/5 hover:bg-white/5">
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-3">
+                                {% if guild.icon %}
+                                <img src="{{ guild.icon.url }}" alt="" class="w-8 h-8 rounded-full">
+                                {% else %}
+                                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                {% endif %}
+                                <span>{{ guild.name }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">{{ guild.member_count }}</td>
+                        <td class="py-3 px-4">{{ guild.owner.name if guild.owner else 'Unknown' }}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-400">
+                                Connected
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if bot.guilds|length > 5 %}
+        <div class="mt-4 text-center">
+            <p class="text-gray-400">And {{ bot.guilds|length - 5 }} more servers...</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function controlMusic(action) {
+    try {
+        const response = await fetch('/api/music/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action, guild_id: 0 })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert(`Music ${action}d successfully!`);
+        } else {
+            alert('Failed to control music: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+</script>
+{% endblock %}
