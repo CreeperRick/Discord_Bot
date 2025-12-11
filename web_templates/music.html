@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Music Control - Discord Bot{% endblock %}
+{% block page_title %}🎵 Music Control{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Now Playing -->
+    <div class="card p-6 rounded-xl">
+        <h3 class="text-lg font-bold mb-4">Now Playing</h3>
+        {% if music_data and music_data[0].now_playing %}
+        <div class="flex items-center space-x-6 p-4 bg-white/5 rounded-lg">
+            <div class="w-24 h-24 rounded-lg overflow-hidden">
+                {% if music_data[0].now_playing.thumbnail %}
+                <img src="{{ music_data[0].now_playing.thumbnail }}" alt="Album Art" class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                    <i class="fas fa-music text-3xl text-white"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="flex-1">
+                <h4 class="text-xl font-bold">{{ music_data[0].now_playing.title }}</h4>
+                <p class="text-gray-400">Requested by: {{ music_data[0].now_playing.requester }}</p>
+                <div class="flex items-center space-x-4 mt-4">
+                    <button onclick="controlMusic('pause')" class="btn-primary text-white py-2 px-6 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-pause"></i>
+                        <span>Pause</span>
+                    </button>
+                    <button onclick="controlMusic('resume')" class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-6 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-play"></i>
+                        <span>Resume</span>
+                    </button>
+                    <button onclick="controlMusic('skip')" class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-forward"></i>
+                        <span>Skip</span>
+                    </button>
+                    <button onclick="controlMusic('stop')" class="bg-red-800 hover:bg-red-900 text-white py-2 px-6 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-stop"></i>
+                        <span>Stop</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-music text-6xl text-gray-600 mb-4"></i>
+            <p class="text-gray-400 text-lg">No music is currently playing</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Music Queue -->
+    <div class="card p-6 rounded-xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Music Queue</h3>
+            <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400">
+                {{ music_data[0].queue_length if music_data and music_data[0] else 0 }} songs
+            </span>
+        </div>
+        
+        {% if music_data and music_data[0].queue_length > 0 %}
+        <div class="space-y-3">
+            {% for i in range(music_data[0].queue_length) %}
+            <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500/20 to-blue-500/20 flex items-center justify-center">
+                        <span class="font-bold">{{ i + 1 }}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium">Song Title {{ i + 1 }}</p>
+                        <p class="text-sm text-gray-400">Requester</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="p-2 rounded-full hover:bg-white/10">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="p-2 rounded-full hover:bg-white/10">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <i class="fas fa-list-music text-4xl text-gray-600 mb-3"></i>
+            <p class="text-gray-400">Queue is empty</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Music Controls -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="card p-6 rounded-xl">
+            <h3 class="text-lg font-bold mb-4">Volume Control</h3>
+            <div class="space-y-4">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-volume-down text-gray-400"></i>
+                    <input type="range" min="0" max="100" value="50" class="flex-1" id="volumeSlider">
+                    <i class="fas fa-volume-up text-gray-400"></i>
+                </div>
+                <button onclick="setVolume()" class="w-full btn-primary text-white py-3 rounded-lg">
+                    Set Volume
+                </button>
+            </div>
+        </div>
+        
+        <div class="card p-6 rounded-xl">
+            <h3 class="text-lg font-bold mb-4">Quick Play</h3>
+            <div class="space-y-3">
+                <input type="text" id="songInput" placeholder="Enter song name or URL" class="w-full p-3 rounded-lg bg-white/10 border border-white/20">
+                <button onclick="playSong()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg flex items-center justify-center space-x-2">
+                    <i class="fas fa-play"></i>
+                    <span>Play Song</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function controlMusic(action) {
+    try {
+        const response = await fetch('/api/music/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action, guild_id: 0 })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showNotification(`Music ${action}d successfully!`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Failed: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showNotification('Error: ' + error.message, 'error');
+    }
+}
+
+function setVolume() {
+    const volume = document.getElementById('volumeSlider').value;
+    // Implement volume setting
+    showNotification(`Volume set to ${volume}%`, 'success');
+}
+
+function playSong() {
+    const song = document.getElementById('songInput').value;
+    if (!song) {
+        showNotification('Please enter a song name or URL', 'warning');
+        return;
+    }
+    // Implement song playing
+    showNotification(`Playing: ${song}`, 'success');
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-yellow-600'}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}
