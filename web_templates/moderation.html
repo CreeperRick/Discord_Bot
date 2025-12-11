@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Moderation - Discord Bot{% endblock %}
+{% block page_title %}🛡️ Moderation Logs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Moderation Actions -->
+    <div class="card p-6 rounded-xl">
+        <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <button onclick="showBanModal()" class="p-4 bg-red-600 hover:bg-red-700 rounded-lg text-center">
+                <i class="fas fa-ban text-2xl mb-2"></i>
+                <p>Ban User</p>
+            </button>
+            <button onclick="showKickModal()" class="p-4 bg-orange-600 hover:bg-orange-700 rounded-lg text-center">
+                <i class="fas fa-door-open text-2xl mb-2"></i>
+                <p>Kick User</p>
+            </button>
+            <button onclick="showWarnModal()" class="p-4 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-center">
+                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                <p>Warn User</p>
+            </button>
+            <button onclick="showClearModal()" class="p-4 bg-blue-600 hover:bg-blue-700 rounded-lg text-center">
+                <i class="fas fa-broom text-2xl mb-2"></i>
+                <p>Clear Messages</p>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Moderation Logs -->
+    <div class="card p-6 rounded-xl">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold">Recent Moderation Actions</h3>
+            <div class="flex space-x-2">
+                <select class="p-2 rounded-lg bg-white/10 border border-white/20">
+                    <option>All Actions</option>
+                    <option>Bans</option>
+                    <option>Kicks</option>
+                    <option>Warnings</option>
+                    <option>Timeouts</option>
+                </select>
+                <button onclick="refreshLogs()" class="p-2 rounded-lg bg-white/10 hover:bg-white/20">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        
+        {% if logs %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th class="text-left py-3 px-4">Action</th>
+                        <th class="text-left py-3 px-4">Moderator</th>
+                        <th class="text-left py-3 px-4">Target</th>
+                        <th class="text-left py-3 px-4">Reason</th>
+                        <th class="text-left py-3 px-4">Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="border-b border-white/5 hover:bg-white/5">
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-1 rounded-full text-xs 
+                                {% if log.action == 'ban' %}bg-red-500/20 text-red-400
+                                {% elif log.action == 'kick' %}bg-orange-500/20 text-orange-400
+                                {% elif log.action == 'warn' %}bg-yellow-500/20 text-yellow-400
+                                {% else %}bg-blue-500/20 text-blue-400{% endif %}">
+                                {{ log.action|title }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-700"></div>
+                                <span>ID: {{ log.moderator_id }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-full bg-gray-700"></div>
+                                <span>ID: {{ log.target_id }}</span>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4">{{ log.reason[:50] }}{% if log.reason|length > 50 %}...{% endif %}</td>
+                        <td class="py-3 px-4">{{ log.created_at }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-shield-alt text-6xl text-gray-600 mb-4"></i>
+            <p class="text-gray-400 text-lg">No moderation logs yet</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="card p-6 rounded-xl">
+            <div class="text-center">
+                <div class="text-3xl font-bold mb-2">{{ logs|selectattr('action', 'equalto', 'ban')|list|length }}</div>
+                <p class="text-gray-400">Total Bans</p>
+            </div>
+        </div>
+        
+        <div class="card p-6 rounded-xl">
+            <div class="text-center">
+                <div class="text-3xl font-bold mb-2">{{ logs|selectattr('action', 'equalto', 'kick')|list|length }}</div>
+                <p class="text-gray-400">Total Kicks</p>
+            </div>
+        </div>
+        
+        <div class="card p-6 rounded-xl">
+            <div class="text-center">
+                <div class="text-3xl font-bold mb-2">{{ logs|selectattr('action', 'equalto', 'warn')|list|length }}</div>
+                <p class="text-gray-400">Total Warnings</p>
+            </div>
+        </div>
+        
+        <div class="card p-6 rounded-xl">
+            <div class="text-center">
+                <div class="text-3xl font-bold mb-2">{{ logs|length }}</div>
+                <p class="text-gray-400">Total Actions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="banModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-gray-900 p-6 rounded-xl w-96">
+        <h3 class="text-xl font-bold mb-4">Ban User</h3>
+        <input type="text" id="banUserId" placeholder="User ID" class="w-full p-3 rounded-lg bg-white/10 mb-3">
+        <input type="text" id="banReason" placeholder="Reason" class="w-full p-3 rounded-lg bg-white/10 mb-4">
+        <div class="flex justify-end space-x-3">
+            <button onclick="hideModal('banModal')" class="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600">Cancel</button>
+            <button onclick="banUser()" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700">Ban</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showBanModal() {
+    document.getElementById('banModal').classList.remove('hidden');
+    document.getElementById('banModal').classList.add('flex');
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+    document.getElementById(modalId).classList.remove('flex');
+}
+
+async function banUser() {
+    const userId = document.getElementById('banUserId').value;
+    const reason = document.getElementById('banReason').value;
+    
+    if (!userId) {
+        showNotification('Please enter a user ID', 'warning');
+        return;
+    }
+    
+    // Implement ban logic
+    showNotification(`Banning user ${userId}...`, 'info');
+    hideModal('banModal');
+}
+
+function showKickModal() {
+    showNotification('Kick modal would open here', 'info');
+}
+
+function showWarnModal() {
+    showNotification('Warn modal would open here', 'info');
+}
+
+function showClearModal() {
+    showNotification('Clear modal would open here', 'info');
+}
+
+function refreshLogs() {
+    showNotification('Refreshing logs...', 'info');
+    setTimeout(() => location.reload(), 1000);
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
+{% endblock %}
