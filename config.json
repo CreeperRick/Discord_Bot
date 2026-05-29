@@ -1,9 +1,9 @@
 {
     "token": "YOUR_BOT_TOKEN_HERE",
-    "channel_id": 1234567890123456789,
+    "channel_id": 1508235756584439968,
     "tiktok_usernames": [
-        "khaby.lame",
-        "bellapoarch"
+        "rixxy.femboy",
+        "boo_softboi"
     ],
-    "check_interval_minutes": 5
+    "check_interval_minutes": 1
 }
