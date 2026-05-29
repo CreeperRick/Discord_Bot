@@ -7,4 +7,5 @@
         "boo_softboi"
     ],
     "check_interval_minutes": 1
+    "browser_executable_path": "/usr/bin/chromium-browser"
 }
