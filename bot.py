@@ -16,6 +16,7 @@ with open(CONFIG_PATH, encoding="utf-8") as f:
 
 TOKEN = config["token"]
 CHANNEL_ID = config["channel_id"]
+PING_ROLE_ID = config["ping_role_id"]
 USERNAMES = config["tiktok_usernames"]
 CHECK_INTERVAL = config["check_interval_minutes"]
 
@@ -88,7 +89,8 @@ async def check_tiktok():
                     cover_url = latest.as_dict["video"]["cover"]
                     embed.set_image(url=cover_url)
 
-                await channel.send(embed=embed)
+                # Ping the role before sending the embed
+                await channel.send(f"<@&{PING_ROLE_ID}>", embed=embed)
                 logger.info(f"Notified Discord about new video from @{username}: {video_id}")
 
                 # Small delay between accounts to be polite to TikTok
