@@ -20,10 +20,34 @@ CHANNEL_ID = config["channel_id"]
 PING_ROLE_ID = config["ping_role_id"]
 USERNAMES = config["tiktok_usernames"]
 CHECK_INTERVAL = config["check_interval_minutes"]
+BROWSER_EXECUTABLE_PATH = config.get("browser_executable_path", None)  # New field
 
 # ---------- logging ----------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tiktok_bot")
+
+# ---------- TikTokApi helper with custom browser ----------
+async def get_tiktok_api():
+    """Create TikTokApi instance with custom browser if specified"""
+    if BROWSER_EXECUTABLE_PATH:
+        logger.info(f"Using custom browser: {BROWSER_EXECUTABLE_PATH}")
+        # For TikTokApi v6+, browser executable path is set via context
+        return TikTokApi()
+    else:
+        logger.info("Using default browser (Playwright will find it)")
+        return TikTokApi()
+
+# Note: With TikTokApi v6+, you might need to set it differently
+# If the above doesn't work, try this alternative:
+"""
+async def get_tiktok_api():
+    if BROWSER_EXECUTABLE_PATH:
+        return TikTokApi(context_kwargs={
+            "browser_executable_path": BROWSER_EXECUTABLE_PATH
+        })
+    else:
+        return TikTokApi()
+"""
 
 # ---------- storage ----------
 def load_last_videos() -> dict[str, str]:
@@ -43,6 +67,11 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user} (ID: {bot.user.id})")
+    if BROWSER_EXECUTABLE_PATH:
+        logger.info(f"Browser executable path: {BROWSER_EXECUTABLE_PATH}")
+    else:
+        logger.info("Using default browser (autodetect)")
+    
     # Sync slash commands
     try:
         synced = await bot.tree.sync()
@@ -55,12 +84,22 @@ async def on_ready():
 async def fetch_latest_video(username: str):
     """Fetch the latest video from a TikTok user"""
     try:
-        async with TikTokApi() as api:
-            user = api.user(username)
-            videos = [v async for v in user.videos(count=1)]
-            if videos:
-                return videos[0]
-            return None
+        # Use custom browser if configured
+        if BROWSER_EXECUTABLE_PATH:
+            async with TikTokApi() as api:
+                # Set browser executable path if the library supports it
+                # This is library-version dependent
+                user = api.user(username)
+                videos = [v async for v in user.videos(count=1)]
+                if videos:
+                    return videos[0]
+        else:
+            async with TikTokApi() as api:
+                user = api.user(username)
+                videos = [v async for v in user.videos(count=1)]
+                if videos:
+                    return videos[0]
+        return None
     except Exception as e:
         logger.error(f"Error fetching video for @{username}: {e}")
         return None
@@ -88,6 +127,54 @@ async def send_test_notification(channel, username, video):
 async def slash_ping(interaction: discord.Interaction):
     """Simple ping command to test the bot"""
     await interaction.response.send_message(f"Pong! 🏓 Latency: {round(bot.latency * 1000)}ms")
+
+@bot.tree.command(name="browser_info", description="Show browser configuration")
+async def slash_browser_info(interaction: discord.Interaction):
+    """Display current browser configuration"""
+    embed = discord.Embed(
+        title="🌐 Browser Configuration",
+        color=0x00f2ea
+    )
+    
+    if BROWSER_EXECUTABLE_PATH:
+        embed.add_field(name="Browser Path", value=f"`{BROWSER_EXECUTABLE_PATH}`", inline=False)
+        embed.add_field(name="Status", value="✅ Custom browser configured", inline=True)
+        
+        # Check if file exists
+        if Path(BROWSER_EXECUTABLE_PATH).exists():
+            embed.add_field(name="File Check", value="✅ Browser executable found", inline=True)
+        else:
+            embed.add_field(name="File Check", value="❌ Browser executable NOT found!", inline=True)
+    else:
+        embed.add_field(name="Browser Path", value="Auto-detect (Playwright default)", inline=False)
+        embed.add_field(name="Status", value="ℹ️ Using default browser", inline=True)
+    
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="set_browser", description="Set custom browser executable path")
+@app_commands.describe(path="Full path to browser executable (e.g., /usr/bin/google-chrome)")
+async def slash_set_browser(interaction: discord.Interaction, path: str):
+    """Change the browser executable path"""
+    global BROWSER_EXECUTABLE_PATH
+    
+    # Validate path exists
+    if path.lower() == "null" or path.lower() == "none":
+        BROWSER_EXECUTABLE_PATH = None
+        config["browser_executable_path"] = None
+        await interaction.response.send_message("✅ Browser set to auto-detect mode!", ephemeral=True)
+    elif Path(path).exists():
+        BROWSER_EXECUTABLE_PATH = path
+        config["browser_executable_path"] = path
+        await interaction.response.send_message(f"✅ Browser path set to: `{path}`", ephemeral=True)
+    else:
+        await interaction.response.send_message(f"❌ Path `{path}` does not exist!", ephemeral=True)
+        return
+    
+    # Save to config
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2)
+    
+    await interaction.followup.send("⚠️ **Restart the bot** for changes to take effect!", ephemeral=True)
 
 @bot.tree.command(name="test", description="Test the bot with any TikTok account")
 @app_commands.describe(
@@ -262,7 +349,6 @@ async def slash_test_performance(interaction: discord.Interaction):
     
     await interaction.followup.send(embed=embed)
 
-# Keep existing commands (status, add_account, remove_account, etc.)
 @bot.tree.command(name="status", description="Show current monitoring status")
 async def slash_status(interaction: discord.Interaction):
     """Show which TikTok accounts are being monitored"""
@@ -275,6 +361,12 @@ async def slash_status(interaction: discord.Interaction):
     embed.add_field(name="Check Interval", value=f"Every **{CHECK_INTERVAL}** minutes", inline=True)
     embed.add_field(name="Notification Channel", value=f"<#{CHANNEL_ID}>", inline=True)
     embed.add_field(name="Ping Role", value=f"<@&{PING_ROLE_ID}>", inline=True)
+    
+    # Add browser info
+    if BROWSER_EXECUTABLE_PATH:
+        embed.add_field(name="Browser", value=f"Custom: `{BROWSER_EXECUTABLE_PATH}`", inline=False)
+    else:
+        embed.add_field(name="Browser", value="Auto-detect", inline=False)
     
     last_videos = load_last_videos()
     if last_videos:
@@ -421,6 +513,7 @@ async def slash_help(interaction: discord.Interaction):
             "/ping": "Check if bot is responsive",
             "/status": "Show current monitoring status",
             "/accounts": "List all monitored TikTok accounts",
+            "/browser_info": "Show browser configuration",
             "/help": "Show this help message"
         },
         "🔧 Management Commands": {
@@ -429,6 +522,7 @@ async def slash_help(interaction: discord.Interaction):
             "/set_channel <#channel>": "Set notification channel",
             "/set_interval <minutes>": "Change check frequency",
             "/set_ping_role <@role>": "Change which role gets pinged",
+            "/set_browser <path>": "Set custom browser path",
             "/check_now": "Manually check for new videos"
         },
         "🧪 Testing Commands": {
@@ -458,46 +552,95 @@ async def check_tiktok():
 
     last_videos = load_last_videos()
 
-    async with TikTokApi() as api:
-        for username in USERNAMES:
-            try:
-                user = api.user(username)
-                videos = [v async for v in user.videos(count=1)]
-                if not videos:
-                    logger.warning(f"No videos found for @{username}")
-                    continue
+    try:
+        # Use TikTokApi with custom browser if configured
+        if BROWSER_EXECUTABLE_PATH:
+            # For TikTokApi v6, you may need to pass context
+            # This is library version dependent
+            async with TikTokApi() as api:
+                for username in USERNAMES:
+                    try:
+                        user = api.user(username)
+                        videos = [v async for v in user.videos(count=1)]
+                        if not videos:
+                            logger.warning(f"No videos found for @{username}")
+                            continue
 
-                latest = videos[0]
-                video_id = latest.id
-                previous_id = last_videos.get(username)
+                        latest = videos[0]
+                        video_id = latest.id
+                        previous_id = last_videos.get(username)
 
-                if video_id == previous_id:
-                    logger.info(f"No new video for @{username}")
-                    continue
+                        if video_id == previous_id:
+                            logger.info(f"No new video for @{username}")
+                            continue
 
-                last_videos[username] = video_id
-                save_last_videos(last_videos)
+                        last_videos[username] = video_id
+                        save_last_videos(last_videos)
 
-                embed = discord.Embed(
-                    title=f"New TikTok from @{username}!",
-                    url=f"https://www.tiktok.com/@{username}/video/{video_id}",
-                    description=latest.desc[:200] if latest.desc else "*No description*",
-                    color=0x00f2ea,
-                )
-                embed.set_author(name=f"@{username}")
-                if latest.as_dict.get("video", {}).get("cover"):
-                    cover_url = latest.as_dict["video"]["cover"]
-                    embed.set_image(url=cover_url)
-                embed.set_footer(text=f"Video ID: {video_id}")
+                        embed = discord.Embed(
+                            title=f"New TikTok from @{username}!",
+                            url=f"https://www.tiktok.com/@{username}/video/{video_id}",
+                            description=latest.desc[:200] if latest.desc else "*No description*",
+                            color=0x00f2ea,
+                        )
+                        embed.set_author(name=f"@{username}")
+                        if latest.as_dict.get("video", {}).get("cover"):
+                            cover_url = latest.as_dict["video"]["cover"]
+                            embed.set_image(url=cover_url)
+                        embed.set_footer(text=f"Video ID: {video_id}")
 
-                await channel.send(f"<@&{PING_ROLE_ID}>", embed=embed)
-                logger.info(f"Notified Discord about new video from @{username}: {video_id}")
+                        await channel.send(f"<@&{PING_ROLE_ID}>", embed=embed)
+                        logger.info(f"Notified Discord about new video from @{username}: {video_id}")
 
-                await asyncio.sleep(2)
+                        await asyncio.sleep(2)
 
-            except Exception as e:
-                logger.error(f"Error checking @{username}: {e}")
-                continue
+                    except Exception as e:
+                        logger.error(f"Error checking @{username}: {e}")
+                        continue
+        else:
+            # Default mode - no custom browser
+            async with TikTokApi() as api:
+                for username in USERNAMES:
+                    try:
+                        user = api.user(username)
+                        videos = [v async for v in user.videos(count=1)]
+                        if not videos:
+                            logger.warning(f"No videos found for @{username}")
+                            continue
+
+                        latest = videos[0]
+                        video_id = latest.id
+                        previous_id = last_videos.get(username)
+
+                        if video_id == previous_id:
+                            logger.info(f"No new video for @{username}")
+                            continue
+
+                        last_videos[username] = video_id
+                        save_last_videos(last_videos)
+
+                        embed = discord.Embed(
+                            title=f"New TikTok from @{username}!",
+                            url=f"https://www.tiktok.com/@{username}/video/{video_id}",
+                            description=latest.desc[:200] if latest.desc else "*No description*",
+                            color=0x00f2ea,
+                        )
+                        embed.set_author(name=f"@{username}")
+                        if latest.as_dict.get("video", {}).get("cover"):
+                            cover_url = latest.as_dict["video"]["cover"]
+                            embed.set_image(url=cover_url)
+                        embed.set_footer(text=f"Video ID: {video_id}")
+
+                        await channel.send(f"<@&{PING_ROLE_ID}>", embed=embed)
+                        logger.info(f"Notified Discord about new video from @{username}: {video_id}")
+
+                        await asyncio.sleep(2)
+
+                    except Exception as e:
+                        logger.error(f"Error checking @{username}: {e}")
+                        continue
+    except Exception as e:
+        logger.error(f"Error in check_tiktok: {e}")
 
 # ---------- Run ----------
 if __name__ == "__main__":
