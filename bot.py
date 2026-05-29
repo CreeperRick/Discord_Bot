@@ -2,25 +2,38 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+from typing import Optional, Dict, List, Tuple
+
+print("Starting bot.py...")
 
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 from TikTokApi import TikTokApi
 
+print("Imports OK")
+
 # ---------- Config ----------
 CONFIG_PATH = Path("config.json")
 LAST_VIDEOS_PATH = Path("last_videos.json")
 
+if not CONFIG_PATH.exists():
+    print("ERROR: config.json not found! Create it first.")
+    exit(1)
+
 with open(CONFIG_PATH, encoding="utf-8") as f:
     config = json.load(f)
 
-TOKEN: str = config["token"]
-CHANNEL_ID: int = config["channel_id"]
-PING_ROLE_ID: int = config["ping_role_id"]
-USERNAMES: list[str] = config["tiktok_usernames"]
-CHECK_INTERVAL: int = config["check_interval_minutes"]
-BROWSER_PATH: str | None = config.get("browser_executable_path", None)
+print("Config loaded:", list(config.keys()))
+
+TOKEN = config["token"]
+CHANNEL_ID = int(config["channel_id"])
+PING_ROLE_ID = int(config["ping_role_id"])
+USERNAMES = config["tiktok_usernames"]
+CHECK_INTERVAL = int(config["check_interval_minutes"])
+BROWSER_PATH = config.get("browser_executable_path", None)
+
+print(f"Monitoring {len(USERNAMES)} accounts, interval={CHECK_INTERVAL}min")
 
 # ---------- Logging ----------
 logging.basicConfig(
@@ -31,37 +44,33 @@ logging.basicConfig(
 logger = logging.getLogger("tiktok_bot")
 
 # ---------- Storage ----------
-def load_last_videos() -> dict[str, str]:
+def load_last_videos():
     if LAST_VIDEOS_PATH.exists():
         with open(LAST_VIDEOS_PATH, encoding="utf-8") as f:
             return json.load(f)
     return {}
 
-def save_last_videos(data: dict[str, str]) -> None:
+def save_last_videos(data):
     with open(LAST_VIDEOS_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
-def save_config() -> None:
+def save_config():
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 
 # ---------- TikTok Helpers ----------
-async def create_api_session(api: TikTokApi) -> None:
-    """Create a TikTok API session, using custom browser if configured."""
-    kwargs: dict = dict(
-        ms_tokens=[""],  # TikTok requires at least one token entry
-        num_sessions=1,
-        headless=True,
-    )
-    if BROWSER_PATH:
-        kwargs["executable_path"] = BROWSER_PATH
-    await api.create_sessions(**kwargs)
-
-async def fetch_latest_video(username: str):
+async def fetch_latest_video(username):
     """Fetch the most recent video from a TikTok user. Returns None on failure."""
     try:
         async with TikTokApi() as api:
-            await create_api_session(api)
+            kwargs = {
+                "ms_tokens": [""],
+                "num_sessions": 1,
+                "headless": True,
+            }
+            if BROWSER_PATH:
+                kwargs["executable_path"] = BROWSER_PATH
+            await api.create_sessions(**kwargs)
             user = api.user(username)
             videos = [v async for v in user.videos(count=1)]
             return videos[0] if videos else None
@@ -69,15 +78,7 @@ async def fetch_latest_video(username: str):
         logger.error(f"Error fetching video for @{username}: {e}")
         return None
 
-def build_video_embed(
-    username: str,
-    video,
-    *,
-    title: str | None = None,
-    description_prefix: str = "",
-    color: int = 0x00f2ea,
-    footer: str | None = None,
-) -> discord.Embed:
+def build_video_embed(username, video, title=None, description_prefix="", color=0x00f2ea, footer=None):
     """Build a Discord embed for a TikTok video."""
     desc = video.desc[:200] if video.desc else "*No description*"
     embed = discord.Embed(
@@ -137,11 +138,7 @@ async def check_tiktok():
         last_videos[username] = video.id
         updated = True
 
-        embed = build_video_embed(
-            username,
-            video,
-            footer=f"Video ID: {video.id}",
-        )
+        embed = build_video_embed(username, video, footer=f"Video ID: {video.id}")
         await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=embed)
         logger.info(f"Notified for new video from @{username}: {video.id}")
         await asyncio.sleep(2)
@@ -156,9 +153,7 @@ async def before_check():
 # ---------- Basic Commands ----------
 @bot.tree.command(name="ping", description="Check if the bot is responsive")
 async def slash_ping(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        f"Pong! 🏓 Latency: {round(bot.latency * 1000)}ms"
-    )
+    await interaction.response.send_message(f"Pong! 🏓 Latency: {round(bot.latency * 1000)}ms")
 
 @bot.tree.command(name="status", description="Show current monitoring status")
 async def slash_status(interaction: discord.Interaction):
@@ -203,11 +198,7 @@ async def slash_browser_info(interaction: discord.Interaction):
         exists = Path(BROWSER_PATH).exists()
         embed.add_field(name="Path", value=f"`{BROWSER_PATH}`", inline=False)
         embed.add_field(name="Status", value="✅ Custom browser configured", inline=True)
-        embed.add_field(
-            name="File Check",
-            value="✅ Found" if exists else "❌ Not found!",
-            inline=True,
-        )
+        embed.add_field(name="File Check", value="✅ Found" if exists else "❌ Not found!", inline=True)
     else:
         embed.add_field(name="Path", value="Auto-detect (Playwright default)", inline=False)
         embed.add_field(name="Status", value="ℹ️ Using default browser", inline=True)
@@ -215,11 +206,7 @@ async def slash_browser_info(interaction: discord.Interaction):
 
 @bot.tree.command(name="help", description="Show all available commands")
 async def slash_help(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="🤖 TikTok Bot Commands",
-        description="All available slash commands:",
-        color=0x00f2ea,
-    )
+    embed = discord.Embed(title="🤖 TikTok Bot Commands", description="All available slash commands:", color=0x00f2ea)
     sections = {
         "📌 Basic": [
             ("/ping", "Check bot latency"),
@@ -376,7 +363,7 @@ async def slash_test(interaction: discord.Interaction, username: str, ping_role:
         footer="🧪 TEST NOTIFICATION — no video was actually posted",
     )
     await channel.send(embed=embed)
-    await interaction.followup.send(f"✅ Test notification sent for `@{username}` (video `{video.id}`).", ephemeral=True)
+    await interaction.followup.send(f"✅ Test sent for `@{username}` (video `{video.id}`).", ephemeral=True)
 
 @bot.tree.command(name="test_all", description="Send test notifications for all monitored accounts")
 async def slash_test_all(interaction: discord.Interaction):
@@ -403,7 +390,7 @@ async def slash_test_all(interaction: discord.Interaction):
 
 @bot.tree.command(name="test_reset", description="Reset stored video IDs to re-trigger notifications")
 @app_commands.describe(username="Username to reset, or leave empty to reset all")
-async def slash_test_reset(interaction: discord.Interaction, username: str = None):
+async def slash_test_reset(interaction: discord.Interaction, username: Optional[str] = None):
     last_videos = load_last_videos()
     if username:
         username = username.lower().strip().lstrip("@")
@@ -413,22 +400,16 @@ async def slash_test_reset(interaction: discord.Interaction, username: str = Non
         del last_videos[username]
         save_last_videos(last_videos)
         await interaction.response.send_message(
-            f"🔄 Reset tracking for `@{username}`. Next check will treat their latest video as new.",
-            ephemeral=True,
+            f"🔄 Reset `@{username}`. Next check will treat their latest video as new.", ephemeral=True
         )
     else:
         count = len(last_videos)
         save_last_videos({})
-        await interaction.response.send_message(
-            f"🔄 Reset tracking for all {count} account(s).", ephemeral=True
-        )
+        await interaction.response.send_message(f"🔄 Reset tracking for all {count} account(s).", ephemeral=True)
 
 @bot.tree.command(name="test_force", description="Force a notification for any account")
-@app_commands.describe(
-    username="TikTok username",
-    custom_message="Optional message override",
-)
-async def slash_test_force(interaction: discord.Interaction, username: str, custom_message: str = None):
+@app_commands.describe(username="TikTok username", custom_message="Optional message override")
+async def slash_test_force(interaction: discord.Interaction, username: str, custom_message: Optional[str] = None):
     username = username.lower().strip().lstrip("@")
     await interaction.response.defer()
     video = await fetch_latest_video(username)
@@ -438,7 +419,7 @@ async def slash_test_force(interaction: discord.Interaction, username: str, cust
     embed = build_video_embed(
         username, video,
         title=f"⚠️ FORCED TEST: @{username}",
-        description_prefix=custom_message or "[FORCED TEST] Manual trigger — ",
+        description_prefix=custom_message + " " if custom_message else "[FORCED TEST] ",
         color=0xff4444,
         footer="⚠️ FORCED TEST — manual trigger",
     )
@@ -465,11 +446,7 @@ async def slash_test_info(interaction: discord.Interaction, username: str):
         value="✅ NEW VIDEO" if is_new else ("Already seen" if stored_id != "Not tracked" else "First time checking"),
         inline=True,
     )
-    embed.add_field(
-        name="Video URL",
-        value=f"[Open TikTok](https://www.tiktok.com/@{username}/video/{video.id})",
-        inline=True,
-    )
+    embed.add_field(name="Video URL", value=f"[Open TikTok](https://www.tiktok.com/@{username}/video/{video.id})", inline=True)
     embed.add_field(name="Description", value=video.desc[:300] if video.desc else "*No description*", inline=False)
     await interaction.followup.send(embed=embed)
 
@@ -503,7 +480,11 @@ async def slash_test_performance(interaction: discord.Interaction):
 
 # ---------- Run ----------
 if __name__ == "__main__":
+    logger.info("Calling bot.run()...")
     try:
         bot.run(TOKEN)
     except KeyboardInterrupt:
         logger.info("Bot stopped.")
+    except Exception as e:
+        logger.error(f"Fatal error: {e}")
+        raise
