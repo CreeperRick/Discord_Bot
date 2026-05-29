@@ -31,6 +31,27 @@ Open `config.json` and fill in:
    ```
    The bot will log in, load the last known video IDs from `last_videos.json`, and start checking every X minutes.
 
+# TikTok → Discord Notification Bot with Slash Commands
+
+Watches multiple TikTok accounts, **pings a role**, and posts a Discord embed when a new video appears.
+
+## Slash Commands Available
+
+Once the bot is running, type `/` in Discord to see all commands:
+
+| Command | Description |
+|---------|-------------|
+| `/ping` | Check if bot is responsive |
+| `/status` | Show current monitoring status |
+| `/accounts` | List all monitored TikTok accounts |
+| `/add_account <username>` | Add a TikTok account to monitor |
+| `/remove_account <username>` | Remove a TikTok account from monitoring |
+| `/check_now` | Manually check for new videos |
+| `/set_channel <#channel>` | Set the notification channel |
+| `/set_interval <minutes>` | Change check interval (1-60 min) |
+| `/set_ping_role <@role>` | Change which role gets pinged |
+| `/help` | Show all commands |
+
 ## How it works
 - On first run it saves the most recent video ID for each account so it won’t spam notifications for existing videos.
 - When a new video is detected, it sends an embed to the specified Discord channel.
@@ -41,3 +62,4 @@ Open `config.json` and fill in:
 - **Playwright issues?** Make sure you ran `playwright install` and that your system can run a headless browser.
 
 Enjoy!
+
