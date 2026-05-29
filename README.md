@@ -11,8 +11,8 @@ Watches multiple TikTok accounts and posts a Discord embed when a new video appe
 
 1. **Install dependencies**
 ```
-git clone https://github.com/YOUR_USERNAME/tiktok-discord-bot.git
-cd tiktok-discord-bot
+git clone https://github.com/CreeperRick/Discord_Bot/tree/main
+cd Discord_Bot
 pip install -r requirements.txt
 playwright install
 ```
