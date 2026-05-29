@@ -1,0 +1,9 @@
+{
+    "token": "YOUR_BOT_TOKEN_HERE",
+    "channel_id": 1234567890123456789,
+    "tiktok_usernames": [
+        "khaby.lame",
+        "bellapoarch"
+    ],
+    "check_interval_minutes": 5
+}
