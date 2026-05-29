@@ -1,6 +1,7 @@
 {
     "token": "YOUR_BOT_TOKEN_HERE",
     "channel_id": 1508235756584439968,
+    "ping_role_id": 1508227158076690562,
     "tiktok_usernames": [
         "rixxy.femboy",
         "boo_softboi"
