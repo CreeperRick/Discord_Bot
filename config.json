@@ -7,5 +7,6 @@
         "boo_softboi"
     ],
     "check_interval_minutes": 1
-    "browser_executable_path": "/usr/bin/chromium-browser"
+    "browser_executable_path": "/usr/bin/chromium"
+    "ms_token": "mdrlnrW4Nj090E7A5lSPOWfRXM7wYvdQk6MytLPq4qCoaLkzL7oTO_ZKC2zErHuin5C9eNISouLcpMgkxnLu8H41sz5xTPwWT_KF42U2scdD_Hgh2H52-QxOKy97AVUu5Jwmq-Tt1IGJ"
 }
