@@ -1,15 +1,17 @@
 import asyncio
 import json
 import logging
+import re
 from pathlib import Path
-from typing import Optional, Dict, List, Tuple
+from typing import Optional
 
 print("Starting bot.py...")
 
 import discord
 from discord.ext import commands, tasks
 from discord import app_commands
-from TikTokApi import TikTokApi
+import feedparser
+import aiohttp
 
 print("Imports OK")
 
@@ -31,9 +33,8 @@ CHANNEL_ID = int(config["channel_id"])
 PING_ROLE_ID = int(config["ping_role_id"])
 USERNAMES = config["tiktok_usernames"]
 CHECK_INTERVAL = int(config["check_interval_minutes"])
-BROWSER_PATH = config.get("browser_executable_path", None)
 
-print(f"Monitoring {len(USERNAMES)} accounts, interval={CHECK_INTERVAL}min")
+print(f"Monitoring {len(USERNAMES)} accounts, interval={CHECK_INTERVAL}min (RSS mode)")
 
 # ---------- Logging ----------
 logging.basicConfig(
@@ -58,47 +59,63 @@ def save_config():
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 
-# ---------- TikTok Helpers ----------
-async def fetch_latest_video(username):
-    """Fetch the most recent video from a TikTok user. Returns None on failure."""
-    # Termux/root: headless only, --no-sandbox required
+# ---------- TikTok RSS + Thumbnail Fetch ----------
+async def fetch_video_thumbnail(video_url: str) -> Optional[str]:
+    """Extract video thumbnail URL from TikTok video page using regex."""
     try:
-        async with TikTokApi() as api:
-            kwargs = {
-                "ms_tokens": [config.get("ms_token", "")],
-                "num_sessions": 1,
-                "headless": True,
-                "browser": "chromium",
-                "override_browser_args": [
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--disable-dev-shm-usage",
-                ],
-            }
-            if BROWSER_PATH:
-                kwargs["executable_path"] = BROWSER_PATH
-            await api.create_sessions(**kwargs)
-            user = api.user(username)
-            videos = [v async for v in user.videos(count=1)]
-            if videos:
-                logger.info(f"Fetched video for @{username}")
-                return videos[0]
-        return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(video_url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
+                if resp.status != 200:
+                    return None
+                html = await resp.text()
+                # Look for og:image meta tag
+                match = re.search(r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"', html)
+                if match:
+                    return match.group(1)
+                # Fallback: look for twitter:image
+                match = re.search(r'<meta[^>]*name="twitter:image"[^>]*content="([^"]+)"', html)
+                if match:
+                    return match.group(1)
     except Exception as e:
-        logger.error(f"Error fetching video for @{username}: {e}")
+        logger.debug(f"Thumbnail fetch failed: {e}")
+    return None
+
+def fetch_latest_video_rss(username):
+    """Fetch the most recent video from a TikTok user via RSS feed."""
+    url = f"https://www.tiktok.com/@{username}/rss"
+    try:
+        feed = feedparser.parse(url)
+        if not feed.entries:
+            logger.warning(f"No entries in RSS feed for @{username}")
+            return None
+        latest = feed.entries[0]
+        match = re.search(r'/video/(\d+)', latest.link)
+        video_id = match.group(1) if match else "unknown"
+        # Return a simple object that works with our embed builder
+        return type('Video', (), {
+            'id': video_id,
+            'desc': latest.title,
+            'link': latest.link,
+        })()
+    except Exception as e:
+        logger.error(f"RSS fetch failed for @{username}: {e}")
         return None
 
+async def fetch_latest_video(username):
+    """Async wrapper – returns video object with id, desc, and optional thumbnail."""
+    video = fetch_latest_video_rss(username)
+    if video and hasattr(video, 'link'):
+        # Try to get thumbnail (non-blocking, but may add delay)
+        thumbnail = await fetch_video_thumbnail(video.link)
+        if thumbnail:
+            video.thumbnail = thumbnail
+    return video
+
 def build_video_embed(username, video, title=None, description_prefix="", color=0x00f2ea, footer=None):
-    """Build a Discord embed for a TikTok video."""
-    d = video.as_dict if hasattr(video, "as_dict") else {}
-    raw_desc = (
-        getattr(video, "desc", None)
-        or d.get("desc")
-        or d.get("description")
-        or ""
-    )
+    """Build a Discord embed for a TikTok video (includes thumbnail if available)."""
+    video_id = getattr(video, "id", "unknown")
+    raw_desc = getattr(video, "desc", "")
     desc = raw_desc[:200] if raw_desc else "*No description*"
-    video_id = getattr(video, "id", None) or d.get("id", "unknown")
     embed = discord.Embed(
         title=title or f"📸 New TikTok from @{username}!",
         url=f"https://www.tiktok.com/@{username}/video/{video_id}",
@@ -108,9 +125,8 @@ def build_video_embed(username, video, title=None, description_prefix="", color=
     embed.set_author(name=f"@{username}")
     if footer:
         embed.set_footer(text=footer)
-    cover = d.get("video", {}).get("cover") or d.get("video", {}).get("dynamicCover")
-    if cover:
-        embed.set_image(url=cover)
+    if hasattr(video, 'thumbnail') and video.thumbnail:
+        embed.set_image(url=video.thumbnail)
     return embed
 
 # ---------- Bot ----------
@@ -120,10 +136,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user} (ID: {bot.user.id})")
-    logger.info(
-        f"Browser: {BROWSER_PATH if BROWSER_PATH else 'auto-detect'} | "
-        f"Monitoring {len(USERNAMES)} account(s) every {CHECK_INTERVAL} min"
-    )
+    logger.info(f"Monitoring {len(USERNAMES)} account(s) every {CHECK_INTERVAL} min via RSS")
     try:
         synced = await bot.tree.sync()
         logger.info(f"Synced {len(synced)} slash command(s)")
@@ -180,11 +193,7 @@ async def slash_status(interaction: discord.Interaction):
     embed.add_field(name="Check Interval", value=f"Every **{CHECK_INTERVAL}** min", inline=True)
     embed.add_field(name="Notification Channel", value=f"<#{CHANNEL_ID}>", inline=True)
     embed.add_field(name="Ping Role", value=f"<@&{PING_ROLE_ID}>", inline=True)
-    embed.add_field(
-        name="Browser",
-        value=f"`{BROWSER_PATH}`" if BROWSER_PATH else "Auto-detect",
-        inline=False,
-    )
+    embed.add_field(name="Method", value="RSS + optional thumbnail", inline=False)
     if USERNAMES:
         embed.add_field(
             name="Monitored Accounts",
@@ -209,17 +218,11 @@ async def slash_list_accounts(interaction: discord.Interaction):
     )
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="browser_info", description="Show browser configuration")
+@bot.tree.command(name="browser_info", description="Show current method (RSS mode)")
 async def slash_browser_info(interaction: discord.Interaction):
-    embed = discord.Embed(title="🌐 Browser Configuration", color=0x00f2ea)
-    if BROWSER_PATH:
-        exists = Path(BROWSER_PATH).exists()
-        embed.add_field(name="Path", value=f"`{BROWSER_PATH}`", inline=False)
-        embed.add_field(name="Status", value="✅ Custom browser configured", inline=True)
-        embed.add_field(name="File Check", value="✅ Found" if exists else "❌ Not found!", inline=True)
-    else:
-        embed.add_field(name="Path", value="Auto-detect (Playwright default)", inline=False)
-        embed.add_field(name="Status", value="ℹ️ Using default browser", inline=True)
+    embed = discord.Embed(title="🌐 Current Mode", color=0x00f2ea)
+    embed.add_field(name="Method", value="RSS feed (no browser required)", inline=False)
+    embed.add_field(name="Thumbnails", value="Extracted from video page (if available)", inline=False)
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="help", description="Show all available commands")
@@ -230,7 +233,7 @@ async def slash_help(interaction: discord.Interaction):
             ("/ping", "Check bot latency"),
             ("/status", "Show monitoring status"),
             ("/accounts", "List monitored accounts"),
-            ("/browser_info", "Show browser config"),
+            ("/browser_info", "Show current method (RSS)"),
             ("/help", "This message"),
         ],
         "🔧 Management": [
@@ -239,7 +242,6 @@ async def slash_help(interaction: discord.Interaction):
             ("/set_channel <#channel>", "Set notification channel"),
             ("/set_interval <minutes>", "Change check frequency"),
             ("/set_ping_role <@role>", "Change ping role"),
-            ("/set_browser <path>", "Set browser path (or 'none')"),
             ("/check_now", "Manually trigger a check"),
         ],
         "🧪 Testing": [
@@ -248,7 +250,7 @@ async def slash_help(interaction: discord.Interaction):
             ("/test_reset [username]", "Reset stored video IDs"),
             ("/test_force <username>", "Force a notification"),
             ("/test_info <username>", "Inspect account without notifying"),
-            ("/test_performance", "Benchmark API response times"),
+            ("/test_performance", "Benchmark response times"),
         ],
     }
     for section, cmds in sections.items():
@@ -332,24 +334,6 @@ async def slash_set_ping_role(interaction: discord.Interaction, role: discord.Ro
     config["ping_role_id"] = role.id
     save_config()
     await interaction.response.send_message(f"✅ Ping role set to {role.mention}!")
-
-@bot.tree.command(name="set_browser", description="Set the browser executable path")
-@app_commands.describe(path="Full path to browser (e.g. /usr/bin/chromium-browser), or 'none' for auto-detect")
-async def slash_set_browser(interaction: discord.Interaction, path: str):
-    global BROWSER_PATH
-    if path.lower() in ("none", "null", "auto"):
-        BROWSER_PATH = None
-        config["browser_executable_path"] = None
-        await interaction.response.send_message("✅ Browser set to auto-detect.", ephemeral=True)
-    elif Path(path).exists():
-        BROWSER_PATH = path
-        config["browser_executable_path"] = path
-        await interaction.response.send_message(f"✅ Browser path set to `{path}`.", ephemeral=True)
-    else:
-        await interaction.response.send_message(f"❌ Path `{path}` does not exist.", ephemeral=True)
-        return
-    save_config()
-    await interaction.followup.send("⚠️ **Restart the bot** for this change to take effect.", ephemeral=True)
 
 @bot.tree.command(name="check_now", description="Manually check for new videos right now")
 async def slash_check_now(interaction: discord.Interaction):
@@ -466,20 +450,21 @@ async def slash_test_info(interaction: discord.Interaction, username: str):
     )
     embed.add_field(name="Video URL", value=f"[Open TikTok](https://www.tiktok.com/@{username}/video/{video.id})", inline=True)
     embed.add_field(name="Description", value=video.desc[:300] if video.desc else "*No description*", inline=False)
+    if hasattr(video, 'thumbnail') and video.thumbnail:
+        embed.set_thumbnail(url=video.thumbnail)
     await interaction.followup.send(embed=embed)
 
-@bot.tree.command(name="test_performance", description="Benchmark API response time for all monitored accounts")
+@bot.tree.command(name="test_performance", description="Benchmark response time for all monitored accounts")
 async def slash_test_performance(interaction: discord.Interaction):
     if not USERNAMES:
         await interaction.response.send_message("❌ No accounts to benchmark.", ephemeral=True)
         return
     await interaction.response.send_message("⏱️ Running performance test...", ephemeral=True)
     results = []
-    loop = asyncio.get_event_loop()
     for username in USERNAMES:
-        t0 = loop.time()
+        start = asyncio.get_event_loop().time()
         video = await fetch_latest_video(username)
-        elapsed = (loop.time() - t0) * 1000
+        elapsed = (asyncio.get_event_loop().time() - start) * 1000
         results.append((username, elapsed, video is not None))
     avg = sum(r[1] for r in results) / len(results)
     embed = discord.Embed(
