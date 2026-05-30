@@ -1,1 +1,14 @@
-python3.11 -c "open('config.json','rb').read()" && python3.11 -c "import sys; d=open('config.json','rb').read(); print(len(d)); print(d[:30])"
+python3.11 -c "
+import json
+data = {
+    'token': 'MTUxMDAwMDQ.....',
+    'channel_id': 1508235756584439968,
+    'ping_role_id': 1508227158076690562,
+    'tiktok_usernames': ['rixxy.femboy', 'boo_softboi'],
+    'check_interval_minutes': 1,
+    'browser_executable_path': '/usr/bin/chromium',
+    'ms_token': 'mdrlnrW4Nj090E7A5lSPOWfRXM7wYvdQk6MytLPq4qCoaLkzL7oTO_ZKC2zErHuin5C9eNISouLcpMgkxnLu8H41sz5xTPwWT_KF42U2scdD_Hgh2H52-QxOKy97AVUu5Jwmq-Tt1IGJ'
+}
+json.dump(data, open('config.json', 'w', encoding='utf-8'), indent=2)
+print('Done')
+"
