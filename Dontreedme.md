@@ -1,2 +1,16 @@
-root@localhost:/data/data/com.termux/files/home/Discord_Bot# python3.11 ./bot.py                                                Starting bot.py...                                              Imports OK                                                      Config loaded: ['token', 'channel_id', 'ping_role_id', 'tiktok_usernames', 'check_interval_minutes', 'browser_executable_path'] Monitoring 2 accounts, interval=1min                            2026-05-30 01:41:46 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported                              2026-05-30 01:41:46 [WARNING] discord.client: davey is not installed, voice will NOT be supported                               2026-05-30 01:41:46 [INFO] tiktok_bot: Calling bot.run()...     2026-05-30 01:41:46 WARNING  discord.ext.commands.bot Privileged message content intent is missing, commands may not work as expected.                                                          2026-05-30 01:41:46 [WARNING] discord.ext.commands.bot: Privileged message content intent is missing, commands may not work as expected.                                                        2026-05-30 01:41:46 INFO     discord.client logging in using static token                                                       2026-05-30 01:41:46 [INFO] discord.client: logging in using static token                                                        2026-05-30 01:41:48 INFO     discord.gateway Shard ID None has connected to Gateway (Session ID: d909d091bc53a32049777304e73eeae9).                                                             2026-05-30 01:41:48 [INFO] discord.gateway: Shard ID None has connected to Gateway (Session ID: d909d091bc53a32049777304e73eeae9).                                                              2026-05-30 01:41:50 [INFO] tiktok_bot: Logged in as TikTokPing#5324 (ID: 1510000436776796412)                                   2026-05-30 01:41:50 [INFO] tiktok_bot: Browser: /usr/bin/chromium | Monitoring 2 account(s) every 1 min                         2026-05-30 01:41:50 [INFO] tiktok_bot: Synced 18 slash command(s)                                                               2026-05-30 01:41:50 [INFO] tiktok_bot: Running scheduled TikTok check...
-2026-05-30 01:42:14 [ERROR] tiktok_bot: Error fetching video for @rixxy.femboy: None -> TikTok returned an empty response. They are detecting you're a bot, try some of these: headless=False, browser='webkit', consider using a proxy
+root@localhost:/data/data/com.termux/files/home/Discord_Bot# python3.11 ./bot.py
+Starting bot.py...
+Imports OK                                                      Traceback (most recent call last):
+  File "/data/data/com.termux/files/home/Discord_Bot/./bot.py", line 25, in <module>
+    config = json.load(f)
+             ^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 293, in load
+    return loads(fp.read(),                                                ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/decoder.py", line 337, in decode                                                                   obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/json/decoder.py", line 353, in raw_decode                                                               obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 11 column 5 (char 338)                                              root@localhost:/data/data/com.termux/files/home/Discord_Bot#
