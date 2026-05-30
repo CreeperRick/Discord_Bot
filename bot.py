@@ -266,8 +266,8 @@ def reset_all_web():
     return "Reset", 200
 
 def start_web_server():
-    webbrowser.open("http://127.0.0.1:5000")
-    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+    webbrowser.open("http://127.0.0.1:1200")
+    app.run(host="0.0.0.0", port=1200, debug=False, use_reloader=False)
 
 # ---------- Discord Events ----------
 @bot.event
