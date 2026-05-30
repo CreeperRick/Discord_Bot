@@ -287,7 +287,7 @@ async def on_ready():
         bot.web_started = True
         thread = threading.Thread(target=start_web_server, daemon=True)
         thread.start()
-        logger.info("Web UI started at http://127.0.0.1:5000")
+        logger.info("Web UI started at http://127.0.0.1:1200")
 
 # ---------- Background Task ----------
 @tasks.loop(minutes=CHECK_INTERVAL)
