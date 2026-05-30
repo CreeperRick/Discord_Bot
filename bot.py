@@ -90,17 +90,25 @@ async def fetch_latest_video(username):
 
 def build_video_embed(username, video, title=None, description_prefix="", color=0x00f2ea, footer=None):
     """Build a Discord embed for a TikTok video."""
-    desc = video.desc[:200] if video.desc else "*No description*"
+    d = video.as_dict if hasattr(video, "as_dict") else {}
+    raw_desc = (
+        getattr(video, "desc", None)
+        or d.get("desc")
+        or d.get("description")
+        or ""
+    )
+    desc = raw_desc[:200] if raw_desc else "*No description*"
+    video_id = getattr(video, "id", None) or d.get("id", "unknown")
     embed = discord.Embed(
         title=title or f"📸 New TikTok from @{username}!",
-        url=f"https://www.tiktok.com/@{username}/video/{video.id}",
+        url=f"https://www.tiktok.com/@{username}/video/{video_id}",
         description=f"{description_prefix}{desc}",
         color=color,
     )
     embed.set_author(name=f"@{username}")
     if footer:
         embed.set_footer(text=footer)
-    cover = video.as_dict.get("video", {}).get("cover")
+    cover = d.get("video", {}).get("cover") or d.get("video", {}).get("dynamicCover")
     if cover:
         embed.set_image(url=cover)
     return embed
