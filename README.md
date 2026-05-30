@@ -13,6 +13,7 @@ Watches multiple TikTok accounts and posts a Discord embed when a new video appe
 ```
 git clone https://github.com/CreeperRick/Discord_Bot
 cd Discord_Bot
+pip install feedparser
 pip install -r requirements.txt
 playwright install
 ```
