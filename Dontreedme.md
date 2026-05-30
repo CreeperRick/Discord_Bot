@@ -1,16 +1,32 @@
-root@localhost:/data/data/com.termux/files/home/Discord_Bot# python3.11 ./bot.py
-Starting bot.py...
+"channel_id": 1508235756584439968,
+    "ping_role_id": 1508227158076690562,
+    "tiktok_usernames": [
+        "rixxy.femboy",
+        "boo_softboi"
+    ],
+    "check_interval_minutes": 1,
+    "browser_executable_path": "/usr/bin/chromium",
+    "ms_token": "mdrlnrW4Nj090E7A5lSPOWfRXM7wYvdQk6MytLPq4qCoaLkzL7oTO_ZKC2zErHuin5C9eNISouLcpMgkxnLu8H41sz5xTPwWT_KF42U2scdD_Hgh2H52-QxOKy97AVUu5Jwmq-Tt1IGJ"
+}
+root@localhost:/data/data/com.termux/files/home/Discord_Bot#
+
+
+
+root@localhost:/data/data/com.termux/files/home/Discord_Bot# python3.11 ./bot.py                                                Starting bot.py...
 Imports OK                                                      Traceback (most recent call last):
   File "/data/data/com.termux/files/home/Discord_Bot/./bot.py", line 25, in <module>
     config = json.load(f)
              ^^^^^^^^^^^^
   File "/usr/lib/python3.11/json/__init__.py", line 293, in load
-    return loads(fp.read(),                                                ^^^^^^^^^^^^^^^^
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
   File "/usr/lib/python3.11/json/__init__.py", line 346, in loads
     return _default_decoder.decode(s)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.11/json/decoder.py", line 337, in decode                                                                   obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/usr/lib/python3.11/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.11/json/decoder.py", line 353, in raw_decode                                                               obj, end = self.scan_once(s, idx)
-               ^^^^^^^^^^^^^^^^^^^^^^
-json.decoder.JSONDecodeError: Expecting ',' delimiter: line 11 column 5 (char 338)                                              root@localhost:/data/data/com.termux/files/home/Discord_Bot#
+  File "/usr/lib/python3.11/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+root@localhost:/data/data/com.termux/files/home/Discord_Bot#
