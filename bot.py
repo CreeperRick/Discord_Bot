@@ -4,7 +4,7 @@ import logging
 import re
 from pathlib import Path
 from typing import Optional
-from flask import Flask, render_template_string, request, jsonify
+from datetime import datetime
 import threading
 import webbrowser
 
@@ -15,6 +15,7 @@ from discord.ext import commands, tasks
 from discord import app_commands
 import feedparser
 import aiohttp
+from flask import Flask, render_template_string, request
 
 print("Imports OK")
 
@@ -64,18 +65,15 @@ def save_config():
 
 # ---------- TikTok RSS + Thumbnail Fetch ----------
 async def fetch_video_thumbnail(video_url: str) -> Optional[str]:
-    """Extract video thumbnail URL from TikTok video page using regex."""
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(video_url, headers={"User-Agent": "Mozilla/5.0"}) as resp:
                 if resp.status != 200:
                     return None
                 html = await resp.text()
-                # Look for og:image meta tag
                 match = re.search(r'<meta[^>]*property="og:image"[^>]*content="([^"]+)"', html)
                 if match:
                     return match.group(1)
-                # Fallback: look for twitter:image
                 match = re.search(r'<meta[^>]*name="twitter:image"[^>]*content="([^"]+)"', html)
                 if match:
                     return match.group(1)
@@ -84,7 +82,6 @@ async def fetch_video_thumbnail(video_url: str) -> Optional[str]:
     return None
 
 def fetch_latest_video_rss(username):
-    """Fetch the most recent video from a TikTok user via RSS feed."""
     url = f"https://www.tiktok.com/@{username}/rss"
     try:
         feed = feedparser.parse(url)
@@ -94,7 +91,6 @@ def fetch_latest_video_rss(username):
         latest = feed.entries[0]
         match = re.search(r'/video/(\d+)', latest.link)
         video_id = match.group(1) if match else "unknown"
-        # Return a simple object that works with our embed builder
         return type('Video', (), {
             'id': video_id,
             'desc': latest.title,
@@ -105,17 +101,14 @@ def fetch_latest_video_rss(username):
         return None
 
 async def fetch_latest_video(username):
-    """Async wrapper – returns video object with id, desc, and optional thumbnail."""
     video = fetch_latest_video_rss(username)
     if video and hasattr(video, 'link'):
-        # Try to get thumbnail (non-blocking, but may add delay)
         thumbnail = await fetch_video_thumbnail(video.link)
         if thumbnail:
             video.thumbnail = thumbnail
     return video
 
 def build_video_embed(username, video, title=None, description_prefix="", color=0x00f2ea, footer=None):
-    """Build a Discord embed for a TikTok video (includes thumbnail if available)."""
     video_id = getattr(video, "id", "unknown")
     raw_desc = getattr(video, "desc", "")
     desc = raw_desc[:200] if raw_desc else "*No description*"
@@ -136,6 +129,147 @@ def build_video_embed(username, video, title=None, description_prefix="", color=
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# ---------- Web UI (Flask) ----------
+app = Flask(__name__)
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TikTok Bot Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #1e1e2f; color: #eee; }
+        h1 { color: #00f2ea; }
+        .card { background: #2a2a3a; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #444; }
+        th { background: #00f2ea; color: #1e1e2f; }
+        button, input[type=submit] { background: #00f2ea; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        input[type=text] { padding: 8px; border-radius: 5px; border: none; width: 200px; }
+        .status-online { color: #4caf50; }
+        a { color: #00f2ea; }
+    </style>
+</head>
+<body>
+    <h1>🤖 TikTok Monitor Dashboard</h1>
+    <div class="card">
+        <h2>Bot Status</h2>
+        <p><strong>Status:</strong> <span class="status-online">● Online</span></p>
+        <p><strong>Monitored Accounts:</strong> {{ accounts|length }}</p>
+        <p><strong>Check Interval:</strong> {{ interval }} minutes</p>
+        <p><strong>Notification Channel:</strong> <code>{{ channel_id }}</code></p>
+        <p><strong>Ping Role:</strong> <code>{{ ping_role_id }}</code></p>
+    </div>
+
+    <div class="card">
+        <h2>➕ Add Account</h2>
+        <form action="/add" method="post">
+            <input type="text" name="username" placeholder="TikTok username (without @)" required>
+            <input type="submit" value="Add">
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>📋 Monitored Accounts</h2>
+        <table>
+            <tr><th>Username</th><th>Last Video ID</th><th>Action</th></tr>
+            {% for user in accounts %}
+            <tr>
+                <td>@{{ user }}</td>
+                <td><code>{{ last_videos.get(user, 'N/A')[:20] }}</code></td>
+                <td>
+                    <form action="/remove" method="post" style="display:inline;">
+                        <input type="hidden" name="username" value="{{ user }}">
+                        <input type="submit" value="Remove" style="background:#f44336;">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>🕹️ Actions</h2>
+        <form action="/check_now" method="post" style="display:inline;">
+            <input type="submit" value="▶️ Force Check Now">
+        </form>
+        <form action="/reset_all" method="post" style="display:inline;">
+            <input type="submit" value="🔄 Reset All Tracking" style="background:#ff9800;">
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>ℹ️ Info</h2>
+        <p>This bot uses <strong>RSS feeds</strong> – no TikTokApi required.</p>
+        <p>Last updated: {{ time }}</p>
+    </div>
+</body>
+</html>
+"""
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE,
+        accounts=USERNAMES,
+        interval=CHECK_INTERVAL,
+        channel_id=CHANNEL_ID,
+        ping_role_id=PING_ROLE_ID,
+        last_videos=load_last_videos(),
+        time=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+@app.route('/add', methods=['POST'])
+def add_account_web():
+    username = request.form.get('username', '').strip().lower().lstrip('@')
+    if not username or username in USERNAMES:
+        return "Invalid or duplicate", 400
+    async def add():
+        video = await fetch_latest_video(username)
+        if video:
+            USERNAMES.append(username)
+            config["tiktok_usernames"] = USERNAMES
+            save_config()
+            last = load_last_videos()
+            last[username] = video.id
+            save_last_videos(last)
+            return True
+        return False
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(add())
+    loop.close()
+    if result:
+        return "Added", 200
+    return "Failed to fetch video", 400
+
+@app.route('/remove', methods=['POST'])
+def remove_account_web():
+    username = request.form.get('username', '').strip().lower().lstrip('@')
+    if username in USERNAMES:
+        USERNAMES.remove(username)
+        config["tiktok_usernames"] = USERNAMES
+        save_config()
+        last = load_last_videos()
+        last.pop(username, None)
+        save_last_videos(last)
+        return "Removed", 200
+    return "Not found", 404
+
+@app.route('/check_now', methods=['POST'])
+def check_now_web():
+    asyncio.run_coroutine_threadsafe(check_tiktok(), bot.loop)
+    return "Check triggered", 200
+
+@app.route('/reset_all', methods=['POST'])
+def reset_all_web():
+    save_last_videos({})
+    return "Reset", 200
+
+def start_web_server():
+    webbrowser.open("http://127.0.0.1:5000")
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
+
+# ---------- Discord Events ----------
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user} (ID: {bot.user.id})")
@@ -147,6 +281,13 @@ async def on_ready():
         logger.error(f"Failed to sync slash commands: {e}")
     if not check_tiktok.is_running():
         check_tiktok.start()
+
+    # Start web UI thread only once
+    if not hasattr(bot, 'web_started'):
+        bot.web_started = True
+        thread = threading.Thread(target=start_web_server, daemon=True)
+        thread.start()
+        logger.info("Web UI started at http://127.0.0.1:5000")
 
 # ---------- Background Task ----------
 @tasks.loop(minutes=CHECK_INTERVAL)
@@ -184,7 +325,7 @@ async def check_tiktok():
 async def before_check():
     await bot.wait_until_ready()
 
-# ---------- Basic Commands ----------
+# ---------- Slash Commands ----------
 @bot.tree.command(name="ping", description="Check if the bot is responsive")
 async def slash_ping(interaction: discord.Interaction):
     await interaction.response.send_message(f"Pong! 🏓 Latency: {round(bot.latency * 1000)}ms")
@@ -265,7 +406,6 @@ async def slash_help(interaction: discord.Interaction):
     embed.set_footer(text="Type / in Discord to see all commands")
     await interaction.response.send_message(embed=embed)
 
-# ---------- Management Commands ----------
 @bot.tree.command(name="add_account", description="Add a TikTok username to monitor")
 @app_commands.describe(username="TikTok username (without @)")
 async def slash_add_account(interaction: discord.Interaction, username: str):
@@ -344,7 +484,6 @@ async def slash_check_now(interaction: discord.Interaction):
     await check_tiktok()
     await interaction.followup.send("✅ Check completed!", ephemeral=True)
 
-# ---------- Testing Commands ----------
 @bot.tree.command(name="test", description="Send a test notification for any TikTok account")
 @app_commands.describe(
     username="TikTok username (without @)",
