@@ -1,80 +1,40 @@
 root@localhost:/data/data/com.termux/files/home/Discord_Bot# python3.11 ./bot.py
 Starting bot.py...                                              Imports OK
-Config loaded: ['token', 'channel_id', 'ping_role_id', 'tiktok_usernames', 'check_interval_minutes', 'browser_executable_path', 'ms_token']
-Monitoring 2 accounts, interval=1min                            2026-05-30 02:25:15 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported
-2026-05-30 02:25:15 [WARNING] discord.client: davey is not installed, voice will NOT be supported                               2026-05-30 02:25:15 [INFO] tiktok_bot: Calling bot.run()...
-2026-05-30 02:25:15 WARNING  discord.ext.commands.bot Privileged message content intent is missing, commands may not work as expected.                                                          2026-05-30 02:25:15 [WARNING] discord.ext.commands.bot: Privileged message content intent is missing, commands may not work as expected.                                                        2026-05-30 02:25:15 INFO     discord.client logging in using static token                                                       2026-05-30 02:25:15 [INFO] discord.client: logging in using static token
-2026-05-30 02:25:16 INFO     discord.gateway Shard ID None has connected to Gateway (Session ID: 2b524ca7c3166c669ff8b9c7c80c28fd).                                                             2026-05-30 02:25:16 [INFO] discord.gateway: Shard ID None has connected to Gateway (Session ID: 2b524ca7c3166c669ff8b9c7c80c28fd).
-2026-05-30 02:25:18 [INFO] tiktok_bot: Logged in as TikTokPing#5324 (ID: 1510000436776796412)
-2026-05-30 02:25:18 [INFO] tiktok_bot: Browser: /usr/bin/chromium | Monitoring 2 account(s) every 1 min
-s2026-05-30 02:25:59 [INFO] tiktok_bot: Synced 18 slash command(s)
-2026-05-30 02:25:59 [INFO] tiktok_bot: Running scheduled TikTok check...
-2026-05-30 02:26:01 [WARNING] tiktok_bot: Strategy {'headless': False, 'browser': 'chromium'} failed for @rixxy.femboy: BrowserType.launch: Target page, context or browser has been closed
-Browser logs:
-
-╔════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ Looks like you launched a headed browser without having a XServer running.                     ║
-║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
-║                                                                                                ║
-║ <3 Playwright Team                                                                             ║
-╚════════════════════════════════════════════════════════════════════════════════════════════════╝
-Call log:
-  - <launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-v3Fuer --remote-debugging-pipe --no-startup-window
-  - <launched> pid=14345
-  - [pid=14345][err] [14345:14372:0530/022601.594788:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
-  - [pid=14345][err] [14345:14345:0530/022601.604233:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc:257] Missing X server or $DISPLAY
-  - [pid=14345][err] [14345:14345:0530/022601.604271:ERROR:ui/aura/env.cc:246] The platform failed to initialize.  Exiting.
-  - [pid=14345] <gracefully close start>
-  - [pid=14345] <kill>
-  - [pid=14345] <will force kill>
-  - [pid=14345] <process did exit: exitCode=1, signal=null>
-  - [pid=14345] starting temporary directories cleanup
-  - [pid=14345] finished temporary directories cleanup
-  - [pid=14345] <gracefully close end>
-
-2026-05-30 02:26:03 [WARNING] tiktok_bot: Strategy {'headless': False, 'browser': 'webkit'} failed for @rixxy.femboy: BrowserType.launch: Target page, context or browser has been closed
-Browser logs:
-
-<launching> /usr/bin/chromium --inspector-pipe --no-startup-window
-<launched> pid=14393
-[pid=14393][err] [14393:14393:0530/022603.013118:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:101] Running as root without --no-sandbox is not supported. See https://crbug.com/638180.
-Call log:
-  - <launching> /usr/bin/chromium --inspector-pipe --no-startup-window
-  - <launched> pid=14393
-  - [pid=14393][err] [14393:14393:0530/022603.013118:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:101] Running as root without --no-sandbox is not supported. See https://crbug.com/638180.
-  - [pid=14393] <gracefully close start>
-  - [pid=14393] <kill>
-  - [pid=14393] <will force kill>
-  - [pid=14393] <process did exit: exitCode=1, signal=null>
-  - [pid=14393] starting temporary directories cleanup
-  - [pid=14393] finished temporary directories cleanup
-  - [pid=14393] <gracefully close end>
-
-2026-05-30 02:26:04 [WARNING] tiktok_bot: Strategy {'headless': True, 'browser': 'webkit'} failed for @rixxy.femboy: BrowserType.launch: Target page, context or browser has been closed
-Browser logs:
-
-<launching> /usr/bin/chromium --inspector-pipe --headless --no-startup-window
-<launched> pid=14426
-[pid=14426][err] [14426:14426:0530/022604.754579:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:101] Running as root without --no-sandbox is not supported. See https://crbug.com/638180.
-Call log:
-  - <launching> /usr/bin/chromium --inspector-pipe --headless --no-startup-window
-  - <launched> pid=14426
-  - [pid=14426][err] [14426:14426:0530/022604.754579:ERROR:content/browser/zygote_host/zygote_host_impl_linux.cc:101] Running as root without --no-sandbox is not supported. See https://crbug.com/638180.
-  - [pid=14426] <gracefully close start>
-  - [pid=14426] <kill>
-  - [pid=14426] <will force kill>
-  - [pid=14426] <process did exit: exitCode=1, signal=null>
-  - [pid=14426] starting temporary directories cleanup
-  - [pid=14426] finished temporary directories cleanup
-  - [pid=14426] <gracefully close end>
-
-2026-05-30 02:26:04 [ERROR] tiktok_bot: All strategies failed for @rixxy.femboy
-2026-05-30 02:26:06 [WARNING] tiktok_bot: Strategy {'headless': False, 'browser': 'chromium'} failed for @boo_softboi: BrowserType.launch: Target page, context or browser has been closed
-Browser logs:
-
-╔════════════════════════════════════════════════════════════════════════════════════════════════╗
-║ Looks like you launched a headed browser without having a XServer running.                     ║
-║ Set either 'headless: true' or use 'xvfb-run <your-playwright-app>' before running Playwright. ║
+Config loaded: ['token', 'channel_id', 'ping_role_id', 'tiktok_usernames', 'check_interval_minutes', 'browser_executable_path', 'ms_token']                                                     Monitoring 2 accounts, interval=1min
+2026-05-30 02:33:32 [WARNING] discord.client: PyNaCl is not installed, voice will NOT be supported                              2026-05-30 02:33:32 [WARNING] discord.client: davey is not installed, voice will NOT be supported
+2026-05-30 02:33:32 [INFO] tiktok_bot: Calling bot.run()...
+2026-05-30 02:33:32 WARNING  discord.ext.commands.bot Privileged message content intent is missing, commands may not work as expected.
+2026-05-30 02:33:32 [WARNING] discord.ext.commands.bot: Privileged message content intent is missing, commands may not work as expected.
+2026-05-30 02:33:32 INFO     discord.client logging in using static token
+2026-05-30 02:33:32 [INFO] discord.client: logging in using static token
+2026-05-30 02:33:33 INFO     discord.gateway Shard ID None has connected to Gateway (Session ID: 391953f28463c10bd4061de02a7af950).                                                             2026-05-30 02:33:33 [INFO] discord.gateway: Shard ID None has connected to Gateway (Session ID: 391953f28463c10bd4061de02a7af950).
+2026-05-30 02:33:35 [INFO] tiktok_bot: Logged in as TikTokPing#5324 (ID: 1510000436776796412)
+2026-05-30 02:33:35 [INFO] tiktok_bot: Browser: /usr/bin/chromium | Monitoring 2 account(s) every 1 min
+2026-05-30 02:33:36 [INFO] tiktok_bot: Synced 18 slash command(s)
+2026-05-30 02:33:36 [INFO] tiktok_bot: Running scheduled TikTok check...
+2026-05-30 02:33:59 [INFO] tiktok_bot: Fetched video for @rixxy.femboy
+2026-05-30 02:33:59 ERROR    discord.ext.tasks Unhandled exception in internal background task 'check_tiktok'.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/dist-packages/discord/ext/tasks/__init__.py", line 247, in _loop
+    await self.coro(*args, **kwargs)
+  File "/data/data/com.termux/files/home/Discord_Bot/./bot.py", line 151, in check_tiktok
+    embed = build_video_embed(username, video, footer=f"Video ID: {video.id}")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/Discord_Bot/./bot.py", line 93, in build_video_embed
+    desc = video.desc[:200] if video.desc else "*No description*"
+                               ^^^^^^^^^^
+AttributeError: 'Video' object has no attribute 'desc'
+2026-05-30 02:33:59 [ERROR] discord.ext.tasks: Unhandled exception in internal background task 'check_tiktok'.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/dist-packages/discord/ext/tasks/__init__.py", line 247, in _loop
+    await self.coro(*args, **kwargs)
+  File "/data/data/com.termux/files/home/Discord_Bot/./bot.py", line 151, in check_tiktok
+    embed = build_video_embed(username, video, footer=f"Video ID: {video.id}")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/data/com.termux/files/home/Discord_Bot/./bot.py", line 93, in build_video_embed
+    desc = video.desc[:200] if video.desc else "*No description*"
+                               ^^^^^^^^^^
+AttributeError: 'Video' object has no attribute 'desc'
 ║                                                                                                ║
 ║ <3 Playwright Team                                                                             ║
 ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
