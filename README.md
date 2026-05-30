@@ -13,7 +13,7 @@ Watches multiple TikTok accounts and posts a Discord embed when a new video appe
 ```
 git clone https://github.com/CreeperRick/Discord_Bot
 cd Discord_Bot
-pip install discord.py feedparser aiohttp
+pip install discord.py feedparser aiohttp flask
 ```
 The bot uses `TikTokApi` which needs a browser engine. The `playwright install` command downloads Chromium/Firefox.
 
