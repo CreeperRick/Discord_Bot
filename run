@@ -1,0 +1,1 @@
+docker run -d --name proxitok -p 8080:80 ghcr.io/pablouser1/proxitok:master
