@@ -61,33 +61,32 @@ def save_config():
 # ---------- TikTok Helpers ----------
 async def fetch_latest_video(username):
     """Fetch the most recent video from a TikTok user. Returns None on failure."""
-    # Try multiple strategies to avoid TikTok bot detection
-    strategies = [
-        {"headless": False, "browser": "chromium"},
-        {"headless": False, "browser": "webkit"},
-        {"headless": True,  "browser": "webkit"},
-    ]
-    for strategy in strategies:
-        try:
-            async with TikTokApi() as api:
-                kwargs = {
-                    "ms_tokens": [config.get("ms_token", "")],
-                    "num_sessions": 1,
-                }
-                kwargs.update(strategy)
-                if BROWSER_PATH:
-                    kwargs["executable_path"] = BROWSER_PATH
-                await api.create_sessions(**kwargs)
-                user = api.user(username)
-                videos = [v async for v in user.videos(count=1)]
-                if videos:
-                    logger.info(f"Fetched video for @{username} using strategy {strategy}")
-                    return videos[0]
-        except Exception as e:
-            logger.warning(f"Strategy {strategy} failed for @{username}: {e}")
-            continue
-    logger.error(f"All strategies failed for @{username}")
-    return None
+    # Termux/root: headless only, --no-sandbox required
+    try:
+        async with TikTokApi() as api:
+            kwargs = {
+                "ms_tokens": [config.get("ms_token", "")],
+                "num_sessions": 1,
+                "headless": True,
+                "browser": "chromium",
+                "override_browser_args": [
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                ],
+            }
+            if BROWSER_PATH:
+                kwargs["executable_path"] = BROWSER_PATH
+            await api.create_sessions(**kwargs)
+            user = api.user(username)
+            videos = [v async for v in user.videos(count=1)]
+            if videos:
+                logger.info(f"Fetched video for @{username}")
+                return videos[0]
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching video for @{username}: {e}")
+        return None
 
 def build_video_embed(username, video, title=None, description_prefix="", color=0x00f2ea, footer=None):
     """Build a Discord embed for a TikTok video."""
